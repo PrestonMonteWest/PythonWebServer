@@ -8,6 +8,7 @@ from queue import Queue
 import json, os, multiprocessing
 
 from server.errors import ConfigError
+from server.http import HttpResponse
 
 
 
@@ -29,7 +30,7 @@ def setConfig(path):
     '''
 
     # config variables
-    global port, thread_limit
+    global port, threadLimit
 
     config = loadConfig(path)
 
@@ -37,7 +38,7 @@ def setConfig(path):
         os.chdir(config['root'])
     else:
         raise ConfigError(
-            config_file=path,
+            configFile=path,
             message='No root property',
         )
 
@@ -47,14 +48,14 @@ def setConfig(path):
         port = 80
 
     if 'threads per core' in config:
-        threads_per_core = config['threads per core']
+        threadsPerCore = config['threads per core']
     else:
-        threads_per_core = 4
+        threadsPerCore = 4
 
     if 'thread limit' in config:
-        thread_limit = config['thread limit']
+        threadLimit = config['thread limit']
     else:
-        thread_limit = multiprocessing.cpu_count() * threads_per_core
+        threadLimit = multiprocessing.cpu_count() * threadsPerCore
 
 def respond(requests):
     '''
@@ -63,18 +64,16 @@ def respond(requests):
     '''
 
     connectionSocket, clientAddress = requests.get()
-    message = connectionSocket.recv(2048).decode('utf-8')
-    # parse http message
-    # load requested object
-    # generate response
-    # send response
+    message = connectionSocket.recv(4096).decode('utf-8')
+    connectionSocket.send(str(HttpResponse(message)).encode('utf-8'))
     connectionSocket.close()
+
 
 
 # execute necessary setup routines
 setConfig('web.json')
 requests = Queue()
-for i in range(thread_limit):
+for i in range(threadLimit):
     Thread(target=respond, args=(requests,)).start()
 
 serverSocket = socket(AF_INET, SOCK_STREAM)

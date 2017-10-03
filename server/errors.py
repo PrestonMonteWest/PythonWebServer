@@ -1,2 +1,3 @@
 class ConfigError(Exception):
-    pass
+    def __init__(configFile, message=None):
+        super(message=message)
